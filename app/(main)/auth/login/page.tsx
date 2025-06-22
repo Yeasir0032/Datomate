@@ -122,7 +122,8 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
       });
-      if (res.status !== 200) return { error: "Login failed" };
+      console.log(res);
+      if (res.status !== 200) throw new Error(JSON.stringify(res));
       router.push("/");
     } catch (error) {
       console.log(error);
