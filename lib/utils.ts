@@ -74,6 +74,33 @@ export const generateFieldAttributes = (
   return fieldAttr;
 };
 
+export const reverseFieldAttributes = (
+  attributes: ScanAttributes[],
+  level: number = 0,
+  parentId: string = ""
+): DataField[] => {
+  return attributes.map((attr, index) => {
+    const isArray = attr.type.endsWith("- List");
+    const rawType = attr.type.replace("- List", "");
+
+    const currentId = parentId ? `${parentId}-${index}` : `${index}`;
+
+    return {
+      id: currentId,
+      name: attr.name,
+      type: rawType === "Detect the type" ? undefined : rawType,
+      isArray: isArray,
+      autoDetect: rawType === "Detect the type",
+      collapsed: true,
+      level: level,
+      children:
+        attr.children && attr.children.length > 0
+          ? reverseFieldAttributes(attr.children, level + 1, currentId)
+          : undefined,
+    };
+  });
+};
+
 export const generateFieldString = (fields: ScanAttributes[]): string => {
   //TODO:
   if (fields.length === 0)

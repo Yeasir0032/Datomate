@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+    const expiresIn = 60 * 60 * 24 * 10 * 1000; // 5 days
 
     const cookieStore = await cookies();
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {
@@ -25,6 +25,9 @@ export async function POST(req: Request) {
     return new NextResponse("OK", { status: 200 });
   } catch (error) {
     console.log(error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return new NextResponse("Internal Server Error", {
+      status: 500,
+      statusText: "Internal server error",
+    });
   }
 }

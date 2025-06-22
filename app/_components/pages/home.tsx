@@ -10,9 +10,13 @@ import {
   Users,
   Receipt,
   Clipboard,
+  Edit,
+  Download,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import MoreMenuButton from "../components/more-menu-button";
 
 interface props {
   scannerData: {
@@ -24,6 +28,28 @@ interface props {
     fields: ScanAttributes[];
   }[];
 }
+const sampleActions: MenuAction[] = [
+  {
+    id: "edit",
+    label: "Edit",
+    icon: Edit,
+    onClick: () => console.log("Edit clicked"),
+  },
+  {
+    id: "export",
+    label: "Export",
+    icon: Download,
+    onClick: () => console.log("Export clicked"),
+  },
+  {
+    id: "delete",
+    label: "Delete",
+    icon: Trash2,
+    variant: "destructive",
+    onClick: () => console.log("Delete clicked"),
+  },
+];
+
 const HomePage = ({ scannerData }: props) => {
   const router = useRouter();
   const formatDate = (dateString: string) => {
@@ -136,12 +162,7 @@ const HomePage = ({ scannerData }: props) => {
                         <div className={`bg-green-500 p-2 sm:p-3 rounded-lg`}>
                           <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                         </div>
-                        <button
-                          title="More"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                        >
-                          <MoreVertical className="h-4 w-4 text-gray-400" />
-                        </button>
+                        <MoreMenuButton actions={sampleActions} />
                       </div>
 
                       <div className="mb-3">
@@ -176,9 +197,12 @@ const HomePage = ({ scannerData }: props) => {
           <Link href="/new">
             <button
               title="Add new"
-              className="bg-blue-600 cursor-pointer hover:bg-blue-700 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 group"
+              className="bg-blue-600 cursor-pointer hover:bg-blue-700 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 group flex items-center gap-2"
             >
               <Plus className="h-6 w-6 sm:h-7 sm:w-7 group-hover:rotate-90 transition-transform duration-200" />
+              <span className="hidden md:block font-sans font-bold">
+                Add new Scanner
+              </span>
             </button>
           </Link>
         </div>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Plus,
   X,
@@ -12,15 +12,17 @@ import {
   ChevronUp,
   List,
   Layers,
+  Upload,
 } from "lucide-react";
 import {
   generateFieldAttributes,
-  generateFieldString,
   generatePreviewJSON,
+  reverseFieldAttributes,
 } from "@/lib/utils";
-import { addDoc, collection, doc } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import LoadingSpinner from "../components/loading";
 
 export default function DataStructureSetup({ uid }: { uid: string }) {
   const [structure, setStructure] = useState<DataStructure>({
@@ -28,9 +30,33 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
     description: "",
     fields: [],
   });
-
   const [showPreview, setShowPreview] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    async function checkForEdit() {
+      const sc = searchParams.get("sc");
+      if (sc) {
+        setLoading(true);
+        const scannerDocRef = doc(db, "Users", uid, "Scanners", sc);
+        const snapshot = await getDoc(scannerDocRef);
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setStructure({
+            ...structure,
+            name: data.name,
+            description: data.description,
+            fields: reverseFieldAttributes(data.fields),
+          });
+          setEditMode(sc);
+        }
+        setLoading(false);
+      }
+    }
+    checkForEdit();
+  }, []);
 
   const fieldTypes = [
     "text",
@@ -48,14 +74,27 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
     try {
       const userDocRef = doc(db, "Users", uid);
       const scannerCollectionRef = collection(userDocRef, "Scanners");
-      const response = await addDoc(scannerCollectionRef, {
-        name: structure.name,
-        description: structure.description,
-        fields: generateFieldAttributes(structure.fields),
-        scans: 0,
-        lastUsed: new Date().toISOString(),
-      });
-      router.push("/");
+      if (editMode) {
+        const scannerDocRef = doc(userDocRef, "Scanners", editMode);
+        const scannerDoc = await getDoc(scannerDocRef);
+        if (scannerDoc.exists()) {
+          await updateDoc(scannerDocRef, {
+            name: structure.name,
+            description: structure.description,
+            fields: generateFieldAttributes(structure.fields),
+          });
+          router.push(`/scanner/${editMode}`);
+        }
+      } else {
+        const response = await addDoc(scannerCollectionRef, {
+          name: structure.name,
+          description: structure.description,
+          fields: generateFieldAttributes(structure.fields),
+          scans: 0,
+          lastUsed: new Date().toISOString(),
+        });
+        router.push("/");
+      }
     } catch (error) {
       console.log(error);
     }
@@ -68,7 +107,7 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
       type: undefined,
       isArray: false,
       autoDetect: true,
-      collapsed: false,
+      collapsed: true,
       children: [],
       level: level,
     };
@@ -228,19 +267,18 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
             )}
           </div>
           <div className="flex items-center space-x-1 lg:space-x-2 flex-shrink-0">
-            {field.level < 3 &&
-              (field.type === "object" || field.autoDetect) && (
-                <button
-                  title="Add nested field"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addField(field.id, field.level + 1);
-                  }}
-                  className="text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 p-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 transform hover:scale-110"
-                >
-                  <Layers className="w-3 h-3 lg:w-4 lg:h-4" />
-                </button>
-              )}
+            {field.level < 3 && (field.type === "object" || field.isArray) && (
+              <button
+                title="Add nested field"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addField(field.id, field.level + 1);
+                }}
+                className="text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 p-1 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 transform hover:scale-110"
+              >
+                <Layers className="w-3 h-3 lg:w-4 lg:h-4" />
+              </button>
+            )}
             <button
               title="Remove field"
               onClick={(e) => {
@@ -390,6 +428,7 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-zinc-900 dark:via-zinc-800 dark:to-zinc-900 transition-colors duration-300">
+      {loading && <LoadingSpinner />}
       <div className="container mx-auto px-3 lg:px-4 py-4 lg:py-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-zinc-800 rounded-2xl lg:rounded-3xl shadow-2xl dark:shadow-zinc-900/50 overflow-hidden transition-all duration-300">
@@ -465,7 +504,7 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
                   <div className="text-center py-8 lg:py-12 bg-gray-50 dark:bg-zinc-700 rounded-xl lg:rounded-2xl border-2 border-dashed border-gray-300 dark:border-zinc-600 transition-all duration-300">
                     <Database className="w-8 h-8 lg:w-12 lg:h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3 lg:mb-4 transition-colors duration-300" />
                     <p className="text-gray-500 dark:text-gray-400 text-base lg:text-lg mb-3 lg:mb-4 transition-colors duration-300 px-4">
-                      No fields added yet
+                      Add fields to extract more efficiently.
                     </p>
                     <button
                       onClick={() => addField()}
@@ -496,6 +535,19 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
                 </button>
 
                 <div className="flex gap-2 lg:gap-3 order-1 sm:order-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => {
+                      if (editMode) {
+                        router.push(`/scanner/${editMode}`);
+                      } else {
+                        router.push("/");
+                      }
+                    }}
+                    className="inline-flex items-center px-4 lg:px-8 py-2 border lg:py-3 text-sm lg:text-base bg-gradient-to-r  rounded-lg lg:rounded-xl  transition-all duration-300 transform hover:scale-105 shadow-lg flex-1 sm:flex-initial justify-center"
+                  >
+                    <Upload className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2 -rotate-90" />
+                    Cancel
+                  </button>
                   <button
                     disabled={!isValidStructure}
                     onClick={() => submitScanProfile()}

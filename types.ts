@@ -14,6 +14,14 @@ interface ScanAttributes {
   type: string;
   children: ScanAttributes[];
 }
+interface MenuAction {
+  id: string;
+  label: string;
+  icon?: any;
+  variant?: "destructive" | "normal";
+  disabled?: boolean;
+  onClick?: () => void;
+}
 
 interface DataStructure {
   name: string;

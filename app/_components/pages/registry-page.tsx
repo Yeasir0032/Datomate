@@ -8,10 +8,16 @@ import {
   Upload,
   FileText,
   ChevronLeft,
+  Table,
+  List,
 } from "lucide-react";
 import { generateFieldString } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import RegistryDocItem from "../components/registry/registry-doc-item";
+import LoadingSpinner from "../components/loading";
+import RegistryTable from "../components/registry/registry-table-display";
+import { objectToCSV } from "@/lib/flatten";
+import ExportButtonMenu from "../components/registry/export-button";
 
 interface ScanDocument {
   id: string;
@@ -21,7 +27,6 @@ interface ScanDocument {
 
 interface props {
   scannerId: string;
-  // documentColRef: any;
   documents: any;
   scannerData: any;
   userid: string;
@@ -35,32 +40,14 @@ const RegistryPage = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [showFabMenu, setShowFabMenu] = useState(false);
   const [documents, setDocuments] = useState<ScanDocument[]>(docs);
+  const [loading, setLoading] = useState(false);
+  const [displayMode, setDisplayMode] = useState(false);
 
   // Refs for hidden file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
-
-  const formatValue = (value: any): string => {
-    if (Array.isArray(value)) {
-      return value.join(", ");
-    }
-    if (typeof value === "object" && value !== null) {
-      return JSON.stringify(value);
-    }
-    if (typeof value === "boolean") {
-      return value ? "Yes" : "No";
-    }
-    return String(value);
-  };
-
-  const formatFieldName = (key: string): string => {
-    return key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase())
-      .replace(/_/g, " ");
-  };
 
   const searchInDocument = (doc: ScanDocument, query: string): boolean => {
     const lowerQuery = query.toLowerCase();
@@ -81,6 +68,9 @@ const RegistryPage = ({
     );
   };
 
+  const removeDocumentFromDocuments = (id: string) => {
+    setDocuments(documents.filter((doc) => doc.id !== id));
+  };
   const filteredDocuments = documents.filter(
     (doc) => searchQuery === "" || searchInDocument(doc, searchQuery)
   );
@@ -98,6 +88,7 @@ const RegistryPage = ({
   ) => {
     const files = event.target.files;
     if (files && files.length > 0) {
+      setLoading(true);
       const file = files[0];
       setShowFabMenu(false);
 
@@ -110,7 +101,9 @@ const RegistryPage = ({
       }
         Perform OCR to create the fields:
         ${generateFieldString(scannerData.fields)}
-        - Be strict with the naming of the fields.
+        Rules:
+        - Fields: Be strict with the naming of the fields as given. If the field has space then add "-" there. Convert to lowercase.
+          E.g. Contact Number -> contact-number
         - Dont add any additional fields and text
         - Remove extra spaces in values
         - Nesting: The nested elements should be in proper format
@@ -124,7 +117,7 @@ const RegistryPage = ({
         Example Output (the fields may be different) - 
         {
           "name": "John Smith",
-          "companyname": "Tech Solutions Inc.",
+          "company-name": "Tech Solutions Inc.",
           "mobile": "+11234567890",
           "email": "asdfgh@qwer.com",
           "website": "www.random.com"
@@ -154,6 +147,7 @@ const RegistryPage = ({
       };
       setDocuments((prevDocs) => [newDoc, ...prevDocs]);
       event.target.value = "";
+      setLoading(false);
     }
   };
 
@@ -185,6 +179,7 @@ const RegistryPage = ({
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       {/* Header */}
+      {loading && <LoadingSpinner />}
       <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
@@ -200,14 +195,11 @@ const RegistryPage = ({
               </span>
             </div>
             <div>
-              <button
-                title="Export"
-                className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <Upload className="w-5 h-5 rotate-90" />
-              </button>
+              <ExportButtonMenu data={docs} name={scannerData.name} />
+
               <button
                 title="Settings"
+                onClick={() => router.push(`/new?sc=${scannerId}`)}
                 className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <Settings className="w-5 h-5" />
@@ -218,8 +210,8 @@ const RegistryPage = ({
       </header>
 
       {/* Search Bar */}
-      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="relative max-w-md mx-auto sm:max-w-lg">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex gap-1">
+        <div className="relative max-w-md mx-auto sm:max-w-lg w-full">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
@@ -229,32 +221,67 @@ const RegistryPage = ({
             className="w-full pl-10 pr-4 py-2.5 sm:py-3 text-sm sm:text-base bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
-      </div>
-
-      {/* Documents List */}
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pb-24">
-        <div className="space-y-3 sm:space-y-4">
-          {filteredDocuments.length === 0 ? (
-            <div className="text-center py-12 sm:py-16">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 dark:text-gray-500" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-                {searchQuery ? "No documents found" : "No documents yet"}
-              </h3>
-              <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-                {searchQuery
-                  ? "Try adjusting your search terms"
-                  : "Start by scanning your first document using the + button below"}
-              </p>
-            </div>
-          ) : (
-            filteredDocuments.map((doc) => (
-              <RegistryDocItem key={doc.id} doc={doc} />
-            ))
-          )}
+        <div className="flex rounded-lg bg-gray-200">
+          <button
+            title="List view"
+            onClick={() => setDisplayMode(false)}
+            className={`px-2 py-2 rounded-lg ${
+              displayMode
+                ? "bg-gray-200 text-gray-700"
+                : "bg-blue-600 text-white"
+            }`}
+          >
+            <List />
+          </button>
+          <button
+            title="Table View"
+            onClick={() => setDisplayMode(true)}
+            className={`px-2 py-2 rounded-lg ${
+              displayMode
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            <Table />
+          </button>
         </div>
       </div>
+
+      {displayMode ? (
+        <div className="px-2 md:px-5">
+          <RegistryTable data={filteredDocuments} />
+        </div>
+      ) : (
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+          <div className="space-y-3 sm:space-y-4">
+            {filteredDocuments.length === 0 ? (
+              <div className="text-center py-12 sm:py-16">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                  <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 dark:text-gray-500" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  {searchQuery ? "No documents found" : "No documents yet"}
+                </h3>
+                <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                  {searchQuery
+                    ? "Try adjusting your search terms"
+                    : "Start by scanning your first document using the + button below"}
+                </p>
+              </div>
+            ) : (
+              filteredDocuments.map((doc) => (
+                <RegistryDocItem
+                  key={doc.id}
+                  docum={doc}
+                  docRefString={`Users/${userid}/Scanners/${scannerId}/Docs`}
+                  removeFromList={removeDocumentFromDocuments}
+                  setLoading={setLoading}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* FAB Button */}
       <div className="fixed bottom-6 right-6 z-50">
