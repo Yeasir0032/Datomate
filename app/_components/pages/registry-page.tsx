@@ -50,7 +50,6 @@ const RegistryPage = ({
 
   // Refs for hidden file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
 
@@ -81,12 +80,7 @@ const RegistryPage = ({
   );
   const handleFabAction = (action: "camera" | "upload") => {
     setShowFabMenu(false); // Close the FAB menu immediately
-
-    if (action === "camera") {
-      cameraInputRef.current?.click(); // Programmatically click the hidden camera input
-    } else if (action === "upload") {
-      fileInputRef.current?.click(); // Programmatically click the hidden file input
-    }
+    fileInputRef.current?.click();
   };
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -174,31 +168,6 @@ const RegistryPage = ({
     }
   };
 
-  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const photo = files[0];
-      console.log("Captured photo:", photo.name, photo.type);
-      //TODO:
-      alert(
-        `Photo captured: ${photo.name}. In a real app, this would be uploaded for processing.`
-      );
-      // Example of how you might add a new document (replace with actual OCR result)
-      const newDoc: ScanDocument = {
-        id: String(documents.length + 1),
-        scannedAt: new Date().toISOString(),
-        data: {
-          documentType: "Scanned Photo",
-          photoName: photo.name,
-          photoSize: `${(photo.size / 1024).toFixed(2)} KB`,
-        },
-      };
-      setDocuments((prevDocs) => [newDoc, ...prevDocs]);
-    }
-    // Clear the input value
-    event.target.value = "";
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       {/* Header */}
@@ -210,7 +179,7 @@ const RegistryPage = ({
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center space-x-1 sm:space-x-2">
-              <div onClick={() => router.push("/")}>
+              <div onClick={() => router.push("/dashboard")}>
                 <ChevronLeft />
               </div>
               <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
@@ -314,13 +283,6 @@ const RegistryPage = ({
         {showFabMenu && (
           <div className="absolute bottom-16 right-0 mb-2 space-y-2">
             <button
-              title="Open camera"
-              onClick={() => handleFabAction("camera")}
-              className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-            >
-              <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-            <button
               title="Upload an image"
               onClick={() => handleFabAction("upload")}
               className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
@@ -349,17 +311,6 @@ const RegistryPage = ({
         onChange={handleFileChange}
         className="hidden"
         accept="image/*"
-      />
-
-      {/* Hidden file input for camera capture */}
-      <input
-        title="Click"
-        type="file"
-        ref={cameraInputRef}
-        onChange={handleCameraCapture}
-        className="hidden"
-        accept="image/*"
-        capture="environment" // Hint to the browser to open the rear camera
       />
 
       {/* Overlay */}

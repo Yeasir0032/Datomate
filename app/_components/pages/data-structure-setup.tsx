@@ -94,7 +94,7 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
           scans: 0,
           lastUsed: new Date().toISOString(),
         });
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch (error) {
       console.log(error);
@@ -542,7 +542,7 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
                       if (editMode) {
                         router.push(`/scanner/${editMode}`);
                       } else {
-                        router.push("/");
+                        router.push("/dashboard");
                       }
                     }}
                     className="inline-flex items-center px-4 lg:px-8 py-2 border lg:py-3 text-sm lg:text-base bg-gradient-to-r  rounded-lg lg:rounded-xl  transition-all duration-300 transform hover:scale-105 shadow-lg flex-1 sm:flex-initial justify-center"

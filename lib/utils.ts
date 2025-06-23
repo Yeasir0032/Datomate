@@ -110,7 +110,7 @@ export const generateFieldString = (fields: ScanAttributes[]): string => {
   fields.forEach((item, index) => {
     fieldAttr = fieldAttr + `\n- `;
     fieldAttr = fieldAttr + `${item.name}: ${item.type}`;
-    if (item.children.length > 0) {
+    if (item.children && item.children.length > 0) {
       fieldAttr = fieldAttr + "\n  Children:\n";
       item.children.forEach((child) => {
         fieldAttr = fieldAttr + generateNestedStringForField(child, 2);
