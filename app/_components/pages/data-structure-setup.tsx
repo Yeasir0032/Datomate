@@ -71,6 +71,7 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
   ];
 
   const submitScanProfile = async () => {
+    setLoading(true);
     try {
       const userDocRef = doc(db, "Users", uid);
       const scannerCollectionRef = collection(userDocRef, "Scanners");
@@ -98,6 +99,7 @@ export default function DataStructureSetup({ uid }: { uid: string }) {
     } catch (error) {
       console.log(error);
     }
+    setLoading(false);
   };
 
   const addField = (parentId?: string, level: number = 0) => {

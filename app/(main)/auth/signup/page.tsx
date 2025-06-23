@@ -125,9 +125,8 @@ const Signup: React.FC = () => {
       });
       if (res.status !== 200) return { error: "Something went wrong!", res };
 
-      //REVIEW: Add a new user in users collection
       const userDocRef = doc(db, "Users", user.uid);
-      await setDoc(userDocRef, { email: user.email });
+      await setDoc(userDocRef, { email: user.email, totalscans: 0 });
 
       router.push("/");
     } catch (error: any) {
@@ -144,7 +143,6 @@ const Signup: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 md:p-10 border border-gray-100 dark:border-gray-700">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-emerald-100 dark:bg-emerald-800 mb-4">
-              {/* Icon for Signup - A simple user/person icon */}
               <svg
                 className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-200"
                 fill="none"

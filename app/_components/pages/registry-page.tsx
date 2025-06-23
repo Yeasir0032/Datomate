@@ -18,6 +18,7 @@ import LoadingSpinner from "../components/loading";
 import RegistryTable from "../components/registry/registry-table-display";
 import { objectToCSV } from "@/lib/flatten";
 import ExportButtonMenu from "../components/registry/export-button";
+import ToastMessage from "../components/ui/toast";
 
 interface ScanDocument {
   id: string;
@@ -41,6 +42,10 @@ const RegistryPage = ({
   const [showFabMenu, setShowFabMenu] = useState(false);
   const [documents, setDocuments] = useState<ScanDocument[]>(docs);
   const [loading, setLoading] = useState(false);
+  const [toastMsg, setToastMsg] = useState<{
+    msg: string | null;
+    variant?: ToastVariant;
+  }>({ msg: "" });
   const [displayMode, setDisplayMode] = useState(false);
 
   // Refs for hidden file inputs
@@ -129,23 +134,41 @@ const RegistryPage = ({
       formData.append("scannerId", scannerId);
 
       // --- Fetch to your Next.js API Route ---
-      const response = await fetch("/api/gemini-process", {
-        method: "POST",
-        body: formData,
-      });
+      try {
+        const response = await fetch("/api/gemini-process", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log(errorData);
+        if (!response.ok) {
+          const errorData = await response.json();
+          setToastMsg({
+            msg: "Failed to scan. Please try again.",
+            variant: "error",
+          });
+          setTimeout(() => setToastMsg({ msg: "" }), 2000);
+          console.log(errorData);
+        }
+
+        const result = await response.json();
+        const newDoc: ScanDocument = {
+          id: String(documents.length + 1),
+          scannedAt: new Date().toISOString(),
+          data: result.extractedData,
+        };
+        setDocuments((prevDocs) => [newDoc, ...prevDocs]);
+        setToastMsg({
+          msg: "Scan successful",
+          variant: "success",
+        });
+        setTimeout(() => setToastMsg({ msg: "" }), 2000);
+      } catch (error) {
+        setToastMsg({
+          msg: "Failed to scan. Please try again.",
+          variant: "error",
+        });
+        setTimeout(() => setToastMsg({ msg: "" }), 2000);
       }
-
-      const result = await response.json();
-      const newDoc: ScanDocument = {
-        id: String(documents.length + 1),
-        scannedAt: new Date().toISOString(),
-        data: result.extractedData,
-      };
-      setDocuments((prevDocs) => [newDoc, ...prevDocs]);
       event.target.value = "";
       setLoading(false);
     }
@@ -180,6 +203,9 @@ const RegistryPage = ({
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       {/* Header */}
       {loading && <LoadingSpinner />}
+      {toastMsg.msg && (
+        <ToastMessage message={toastMsg.msg} variant={toastMsg.variant} />
+      )}
       <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">

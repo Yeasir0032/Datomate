@@ -9,6 +9,7 @@ interface DataField {
   level: number;
 }
 
+type ToastVariant = "success" | "error" | "warning" | "info";
 interface ScanAttributes {
   name: string;
   type: string;

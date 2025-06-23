@@ -25,11 +25,14 @@ export async function POST(req: NextRequest) {
     const scannerId = formData.get("scannerId") as string | null;
 
     if (!file) {
-      return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
+      return NextResponse.json(
+        { error: "No file uploaded.", success: false },
+        { status: 400 }
+      );
     }
     if (!userContext) {
       return NextResponse.json(
-        { error: "No context provided." },
+        { error: "No context provided.", success: false },
         { status: 400 }
       );
     }
@@ -65,6 +68,9 @@ export async function POST(req: NextRequest) {
           // Remove the JSON block from the summary text
           summaryText = geminiText.replace(jsonMatch[0], "").trim();
           try {
+            await db.doc(`Users/${userid}`).update({
+              totalscans: adminIncrement(1),
+            });
             await db.doc(`Users/${userid}/Scanners/${scannerId}`).update({
               lastUsed: new Date().toISOString(),
               scans: adminIncrement(1),
@@ -105,6 +111,7 @@ export async function POST(req: NextRequest) {
       {
         error: "Failed to process document with Gemini API.",
         details: error.message,
+        success: false,
       },
       { status: 500 }
     );
