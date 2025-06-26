@@ -43,7 +43,7 @@ const ToastMessage = ({
 
   return (
     <div
-      className={`fixed bottom-4 left-4 p-4 rounded-lg shadow-lg text-white text-center border-l-4 transition-opacity duration-300 ${toastClass}`}
+      className={`fixed slide-in-animation bottom-4 left-4 p-4 rounded-lg shadow-lg text-white text-center border-l-4 transition-opacity duration-300 ${toastClass}`}
     >
       {message}
     </div>

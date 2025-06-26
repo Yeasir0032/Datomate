@@ -20,23 +20,33 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import MoreMenuButton from "../more-menu-button";
-import { deleteDoc, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
+import JsonEditorModal from "../edit-modal";
 
 const RegistrydocumItem = ({
   docum,
   docRefString,
   removeFromList,
   setLoading,
+  setDocuments,
 }: {
   docum: ScanDocument;
   docRefString: string;
   removeFromList: (id: string) => void;
   setLoading: Function;
+  setDocuments: Function;
 }) => {
   const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>(
     {}
   );
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const getFieldIcon = (key: string, value: any) => {
     const lowerKey = key.toLowerCase();
 
@@ -66,7 +76,9 @@ const RegistrydocumItem = ({
       id: "edit",
       label: "Edit",
       icon: Edit,
-      onClick: () => console.log("Edit clicked"),
+      onClick: () => {
+        setEditModalOpen(true);
+      },
     },
     {
       id: "export",
@@ -105,6 +117,16 @@ const RegistrydocumItem = ({
       },
     },
   ];
+  const handleEditDocumentSubmit = async (data: Record<string, any>) => {
+    try {
+      const ref = doc(db, docRefString, docum.id);
+      await updateDoc(ref, { data: { ...data } });
+      setDocuments(data);
+    } catch (error) {
+      console.log(error);
+    }
+    setEditModalOpen(false);
+  };
   const formatFieldName = (key: string): string => {
     return key
       .replace(/([A-Z])/g, " $1")
@@ -187,7 +209,6 @@ const RegistrydocumItem = ({
   ): React.JSX.Element => {
     const fieldKey = `${key}-${depth}`;
     const isExpanded = expandedFields[fieldKey];
-    const maxPreviewItems = 2;
 
     if (value.length === 0) {
       return <span className="text-gray-400 italic">Empty array</span>;
@@ -229,25 +250,6 @@ const RegistrydocumItem = ({
           )}
           <span>{value.length} items</span>
         </button>
-
-        {/* {!isExpanded && (
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {value.slice(0, maxPreviewItems).map((item: any, index: number) => (
-              <div key={index} className="truncate">
-                {allSimple
-                  ? String(item)
-                  : `Item ${index + 1}: ${
-                      typeof item === "object" ? "Object" : String(item)
-                    }`}
-              </div>
-            ))}
-            {value.length > maxPreviewItems && (
-              <div className="text-xs text-gray-400">
-                +{value.length - maxPreviewItems} more...
-              </div>
-            )}
-          </div>
-        )} */}
 
         {isExpanded && (
           <div className="ml-4 space-y-3 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
@@ -351,6 +353,13 @@ const RegistrydocumItem = ({
       key={docum.id}
       className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 p-4 sm:p-6 shadow-sm hover:shadow-md dark:hover:shadow-lg transition-shadow duration-200"
     >
+      <JsonEditorModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onSubmit={(data: Record<string, any>) => handleEditDocumentSubmit(data)}
+        initialData={docum.data}
+        title={getdocumentTitle(docum.data)}
+      />
       <div className="flex items-start justify-between mb-3 sm:mb-4">
         <div className="flex-1 min-w-0">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1 truncate">

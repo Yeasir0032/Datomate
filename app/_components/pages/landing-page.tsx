@@ -310,9 +310,20 @@ function LandingPage() {
 
       {/* Hero Section */}
       <section className="pt-24 pb-16 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-6 relative">
+          <div className="absolute top-10 md:top-0 right-0 text-white">
+            <a href="https://www.bolt.new">
+              <img
+                src="/bolt_white.png"
+                alt="Bolt Image"
+                className="h-14 w-14 md:h-28 md:w-28"
+                width={100}
+                height={100}
+              />
+            </a>
+          </div>
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-full text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-full text-sm font-medium mb-12">
               <Scan className="w-4 h-4" />
               AI-Powered Image Analysis and Data Entry
             </div>

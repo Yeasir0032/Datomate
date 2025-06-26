@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { adminAuth } from "@/lib/firebase-admin";
 import { db } from "@/lib/firebase-config";
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
@@ -63,34 +64,7 @@ export default async function Dashboard() {
     );
   }
   const usersCollectionRef = doc(db, "Users", userData.uid);
-  // const exploreDocRef = doc(db, "Explore", "A8yQHK9Y5Od4ePeASqCS");
-  // const dat = [
-  //   { name: "name", type: "text" },
-  //   { name: "company-name", type: "text" },
-  //   {
-  //     name: "address",
-  //     type: "object",
-  //     children: [
-  //       { name: "street", type: "text" },
-  //       { name: "city", type: "text" },
-  //       { name: "state", type: "text" },
-  //       { name: "zipcode", type: "text" },
-  //       { name: "country", type: "text" },
-  //     ],
-  //   },
-  //   {
-  //     name: "contact",
-  //     type: "object",
-  //     children: [
-  //       { name: "mobile", type: "phone" },
-  //       { name: "email", type: "email" },
-  //       { name: "website", type: "url" },
-  //     ],
-  //   },
-  //   { name: "notes", type: "text" },
-  // ];
-
-  // await updateDoc(exploreDocRef, { fields: dat });
+  const exploreDocRef = collection(db, "Explore");
   const exploreCollectionRef = collection(db, "Explore");
   const exploreSnapshot = await getDocs(exploreCollectionRef);
   let exploreData: any = [];

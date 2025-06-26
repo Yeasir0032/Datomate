@@ -16,7 +16,6 @@ import { useRouter } from "next/navigation";
 import RegistryDocItem from "../components/registry/registry-doc-item";
 import LoadingSpinner from "../components/loading";
 import RegistryTable from "../components/registry/registry-table-display";
-import { objectToCSV } from "@/lib/flatten";
 import ExportButtonMenu from "../components/registry/export-button";
 import ToastMessage from "../components/ui/toast";
 
@@ -264,15 +263,25 @@ const RegistryPage = ({
                 </p>
               </div>
             ) : (
-              filteredDocuments.map((doc) => (
-                <RegistryDocItem
-                  key={doc.id}
-                  docum={doc}
-                  docRefString={`Users/${userid}/Scanners/${scannerId}/Docs`}
-                  removeFromList={removeDocumentFromDocuments}
-                  setLoading={setLoading}
-                />
-              ))
+              filteredDocuments.map((doc, index) => {
+                function handleSetDocument(data: any) {
+                  setDocuments((prevDocuments: any[]) => {
+                    const newDocuments = [...prevDocuments]; // Create a shallow copy to avoid direct mutation
+                    newDocuments[index].data = data;
+                    return newDocuments;
+                  });
+                }
+                return (
+                  <RegistryDocItem
+                    key={doc.id}
+                    docum={doc}
+                    setDocuments={handleSetDocument}
+                    docRefString={`Users/${userid}/Scanners/${scannerId}/Docs`}
+                    removeFromList={removeDocumentFromDocuments}
+                    setLoading={setLoading}
+                  />
+                );
+              })
             )}
           </div>
         </div>

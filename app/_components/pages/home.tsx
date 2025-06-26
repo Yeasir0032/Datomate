@@ -4,7 +4,15 @@ import { Plus, Database, Settings, Trash2, Scan } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MoreMenuButton from "../components/more-menu-button";
-import { addDoc, collection, deleteDoc, doc, getDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import ToastMessage from "../components/ui/toast";
 
@@ -30,7 +38,10 @@ interface props {
 const HomePage = ({ scannerData, exploreData, uid, userscans }: props) => {
   const router = useRouter();
   const [scannerDataState, setScannerDataState] = useState(scannerData);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState<{ msg: string; variant?: ToastVariant }>({
+    msg: "",
+    variant: "info",
+  });
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -45,16 +56,28 @@ const HomePage = ({ scannerData, exploreData, uid, userscans }: props) => {
     try {
       const scannerCollectionRef = collection(db, "Users", uid, "Scanners");
       const data = exploreData[id];
-      const finalData = {
-        name: data.name,
-        description: data.description,
-        fields: data.fields,
-        scans: 0,
-        lastUsed: new Date().toISOString(),
-      };
-      const res = await addDoc(scannerCollectionRef, finalData);
-      console.log(res.id);
-      router.push(`/scanner/${res.id}`);
+      const isDocAvailableQuery = query(
+        scannerCollectionRef,
+        where("name", "==", data.name)
+      );
+      const docAvailableSnapshot = await getDocs(isDocAvailableQuery);
+      if (docAvailableSnapshot.docs.length <= 0) {
+        const finalData = {
+          name: data.name,
+          description: data.description,
+          fields: data.fields,
+          scans: 0,
+          lastUsed: new Date().toISOString(),
+        };
+        const res = await addDoc(scannerCollectionRef, finalData);
+        router.push(`/scanner/${res.id}`);
+      } else {
+        setToast({
+          msg: "Scanner with a same name already exists.",
+          variant: "error",
+        });
+        setTimeout(() => setToast({ msg: "" }), 3000);
+      }
     } catch (error) {
       console.log(error);
     }
@@ -63,7 +86,7 @@ const HomePage = ({ scannerData, exploreData, uid, userscans }: props) => {
     <div>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
         {/* Header */}
-        {toast && <ToastMessage message={toast} />}
+        {toast && <ToastMessage message={toast.msg} variant={toast.variant} />}
         <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
@@ -166,8 +189,11 @@ const HomePage = ({ scannerData, exploreData, uid, userscans }: props) => {
                               return registry.id !== item.id;
                             })
                           );
-                          setToast("Delete successful Reload for change");
-                          setTimeout(() => setToast(""), 3000);
+                          setToast({
+                            msg: "Delete successful",
+                            variant: "success",
+                          });
+                          setTimeout(() => setToast({ msg: "" }), 3000);
                         } catch (error) {
                           console.log(error);
                         }
