@@ -18,17 +18,18 @@ export default async function Dashboard() {
       const cookieStore = await cookies();
 
       const userToken = cookieStore.get("authToken")?.value;
-      if (!userToken) {
-        redirect("/auth/login");
-      } else {
+      if (userToken) {
         const decodedClaims = await adminAuth.verifySessionCookie(
           userToken,
           true
         );
         return { email: decodedClaims.email, uid: decodedClaims.uid };
+      } else {
+        redirect("/auth/login");
       }
     } catch (error) {
-      return null;
+      console.log(error);
+      redirect("/auth/login");
     }
   };
   const userData = await fetchUserData();
