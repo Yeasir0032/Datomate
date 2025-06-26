@@ -316,7 +316,14 @@ function LandingPage() {
               <img
                 src="/bolt_white.png"
                 alt="Bolt Image"
-                className="h-14 w-14 md:h-28 md:w-28"
+                className="hidden dark:block h-14 w-14 md:h-28 md:w-28"
+                width={100}
+                height={100}
+              />
+              <img
+                src="/bolt_badge_black.png"
+                alt="Bolt Image"
+                className="block dark:hidden h-14 w-14 md:h-28 md:w-28"
                 width={100}
                 height={100}
               />
